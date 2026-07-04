@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>KoreaCmsEvidenceOptimizer</RootNamespace>
+    <AssemblyName>KoreaCmsEvidenceOptimizer</AssemblyName>
+
+    <!-- NuGet package metadata -->
+    <PackageId>KoreaCmsEvidenceOptimizer</PackageId>
+    <Version>0.0.1</Version>
+    <Authors>Yuseok Kim (yuseok.kim@edushare.kr)</Authors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- Native AOT / C-Export settings: only for the .NET 10 Windows target -->
+  <PropertyGroup Condition="'$(TargetFramework)'=='net10.0-windows'">
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <IsAotCompatible>true</IsAotCompatible>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.3.0" />
+    <PackageReference Include="NAudio.Lame" Version="2.1.0" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
+    <PackageReference Include="PDFtoImage" Version="5.2.1" />
+  </ItemGroup>
+
+</Project>
+

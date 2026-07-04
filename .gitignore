@@ -1,0 +1,24 @@
+## .NET
+bin/
+obj/
+out/
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+
+## NuGet
+nupkg/
+*.nupkg
+
+## Native AOT / C++ build output
+build/
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+## User-specific
+.vs/
+*.user
+*.suo

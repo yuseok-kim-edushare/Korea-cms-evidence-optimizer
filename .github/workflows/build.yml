@@ -1,0 +1,77 @@
+﻿name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore KoreaCmsEvidenceOptimizer.slnx
+
+      - name: Build (net48)
+        run: dotnet build src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net48 -c Release --no-restore
+
+      - name: Build (net10.0-windows)
+        run: dotnet build src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -c Release --no-restore
+
+      - name: Test (net48)
+        run: dotnet test tests/KoreaCmsEvidenceOptimizer.Tests/KoreaCmsEvidenceOptimizer.Tests.csproj -f net48 -c Release --no-restore --logger "console;verbosity=normal"
+
+      - name: Test (net10.0-windows)
+        run: dotnet test tests/KoreaCmsEvidenceOptimizer.Tests/KoreaCmsEvidenceOptimizer.Tests.csproj -f net10.0-windows -c Release --no-restore --logger "console;verbosity=normal"
+
+  publish-aot:
+    runs-on: windows-latest
+    needs: build-test
+    strategy:
+      matrix:
+        rid: [ win-x64, win-x86 ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish Native AOT (${{ matrix.rid }})
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r ${{ matrix.rid }} -c Release
+
+      - name: Upload native artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KoreaCmsEvidenceOptimizer-native-${{ matrix.rid }}
+          path: src/KoreaCmsEvidenceOptimizer/bin/Release/net10.0-windows/${{ matrix.rid }}/publish/
+
+  pack:
+    runs-on: windows-latest
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Pack
+        run: dotnet pack src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release -o ./nupkg
+
+      - name: Upload NuGet package
+        uses: actions/upload-artifact@v4
+        with:
+          name: KoreaCmsEvidenceOptimizer-nupkg
+          path: ./nupkg/*.nupkg

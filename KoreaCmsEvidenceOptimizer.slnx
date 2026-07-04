@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/ConsoleSample/ConsoleSample.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/KoreaCmsEvidenceOptimizer.Tests/KoreaCmsEvidenceOptimizer.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>KoreaCmsEvidenceOptimizer.Samples.Console</RootNamespace>
+    <AssemblyName>KoreaCmsEvidenceOptimizerConsoleSample</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj" />
+  </ItemGroup>
+
+</Project>
