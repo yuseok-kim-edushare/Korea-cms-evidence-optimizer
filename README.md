@@ -16,7 +16,8 @@ src/KoreaCmsEvidenceOptimizer/        라이브러리 본체
 tests/KoreaCmsEvidenceOptimizer.Tests/  xUnit 단위 테스트 (에셋은 코드로 생성)
 samples/ConsoleSample/     .NET 콘솔 샘플
 samples/CppSample/         Native AOT DLL을 호출하는 C++ 샘플
-.github/workflows/build.yml  CI (빌드/테스트/AOT 게시/NuGet 패키징)
+.github/workflows/ci.yaml   CI (빌드/테스트, Dependabot auto-merge)
+.github/workflows/cd.yaml   CD (main 머지 시 ZIP GitHub Release)
 ```
 
 ## 사용법 (관리형 API)

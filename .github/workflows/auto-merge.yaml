@@ -1,0 +1,97 @@
+name: Auto-merge on Repository Dispatch
+
+on:
+  repository_dispatch:
+    types: [auto-merge-pr]
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+
+    steps:
+      - name: Validate and merge PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.client_payload.pr_number;
+
+            if (!prNumber) {
+              core.setFailed('PR number not provided in client_payload');
+              return;
+            }
+
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            console.log(`Processing PR #${pr.number}: ${pr.title}`);
+            console.log(`From ${pr.head.ref} to ${pr.base.ref}`);
+
+            if (pr.state !== 'open') {
+              core.setFailed(`PR #${prNumber} is not open (state: ${pr.state})`);
+              return;
+            }
+
+            if (pr.user.login !== 'dependabot[bot]') {
+              core.setFailed(`PR #${prNumber} is not from dependabot[bot] (author: ${pr.user.login})`);
+              return;
+            }
+
+            const labels = pr.labels.map(label => label.name);
+            if (!labels.includes('dependencies')) {
+              core.setFailed(`PR #${prNumber} does not have the 'dependencies' label`);
+              return;
+            }
+
+            if (pr.mergeable === false) {
+              core.setFailed(`PR #${prNumber} is not mergeable`);
+              return;
+            }
+
+            if (pr.mergeable_state === 'blocked') {
+              core.setFailed(`PR #${prNumber} is blocked from merging`);
+              return;
+            }
+
+            const { data: checks } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: pr.head.sha
+            });
+
+            const relevantChecks = checks.check_runs.filter(
+              check => check.name !== 'trigger-auto-merge' && check.name !== 'auto-merge'
+            );
+
+            if (relevantChecks.length === 0) {
+              core.setFailed(`No CI checks found for PR #${prNumber}`);
+              return;
+            }
+
+            const failedChecks = relevantChecks.filter(
+              check => check.status !== 'completed' || check.conclusion !== 'success'
+            );
+
+            if (failedChecks.length > 0) {
+              const names = failedChecks.map(c => `${c.name} (${c.status}/${c.conclusion})`).join(', ');
+              core.setFailed(`CI checks not all passing for PR #${prNumber}: ${names}`);
+              return;
+            }
+
+            console.log(`All CI checks passed. Squash merging PR #${prNumber}...`);
+
+            const result = await github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              merge_method: 'squash',
+              commit_title: pr.title
+            });
+
+            console.log(`Successfully squash-merged PR #${prNumber}`);
+            console.log(`Merge SHA: ${result.data.sha}`);

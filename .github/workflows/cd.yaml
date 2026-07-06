@@ -1,0 +1,172 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - ".github/prompts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      - name: Get USERPROFILE and set CACHE_PATH
+        shell: pwsh
+        run: |
+          $userProfile = [System.Environment]::GetEnvironmentVariable("USERPROFILE")
+          $cachePath = Join-Path $userProfile ".nuget\packages"
+          echo "CACHE_PATH=$cachePath" >> $env:GITHUB_ENV
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            ${{ env.CACHE_PATH }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore KoreaCmsEvidenceOptimizer.slnx
+
+      - name: Build (Release)
+        run: dotnet build src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release --no-restore
+
+      - name: Publish Native AOT (win-x64)
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x64 -c Release
+
+      - name: Publish Native AOT (win-x86)
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x86 -c Release
+
+      - name: Pack NuGet package
+        run: dotnet pack src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release -o ./nupkg --no-build
+
+      - name: Prepare release files
+        shell: pwsh
+        run: |
+          $projectRoot = "${{ github.workspace }}"
+          $srcProject = Join-Path $projectRoot "src\KoreaCmsEvidenceOptimizer"
+          $releaseRoot = Join-Path $projectRoot "release-files"
+
+          if (Test-Path $releaseRoot) {
+            Remove-Item -Path $releaseRoot -Recurse -Force
+          }
+          New-Item -Path $releaseRoot -ItemType Directory -Force | Out-Null
+
+          $stagingName = "KoreaCmsEvidenceOptimizer-staging"
+          $stagingDir = Join-Path $releaseRoot $stagingName
+          New-Item -Path $stagingDir -ItemType Directory -Force | Out-Null
+
+          $net48Src = Join-Path $srcProject "bin\Release\net48"
+          $net48Dest = Join-Path $stagingDir "net48"
+          if (!(Test-Path $net48Src)) {
+            Write-Error "net48 build output not found at: $net48Src"
+            exit 1
+          }
+          New-Item -Path $net48Dest -ItemType Directory -Force | Out-Null
+          Copy-Item -Path (Join-Path $net48Src "*.dll") -Destination $net48Dest -Force
+          Copy-Item -Path (Join-Path $net48Src "*.xml") -Destination $net48Dest -Force -ErrorAction SilentlyContinue
+
+          $aotBase = Join-Path $srcProject "bin\Release\net10.0-windows"
+          foreach ($rid in @("win-x64", "win-x86")) {
+            $aotSrc = Join-Path $aotBase "$rid\publish"
+            $aotDest = Join-Path $stagingDir "native-aot\$rid"
+            if (!(Test-Path $aotSrc)) {
+              Write-Error "Native AOT publish output not found at: $aotSrc"
+              exit 1
+            }
+            New-Item -Path $aotDest -ItemType Directory -Force | Out-Null
+            Copy-Item -Path "$aotSrc\*" -Destination $aotDest -Recurse -Force
+          }
+
+          $nupkgDest = Join-Path $stagingDir "nupkg"
+          New-Item -Path $nupkgDest -ItemType Directory -Force | Out-Null
+          Copy-Item -Path (Join-Path $projectRoot "nupkg\*.nupkg") -Destination $nupkgDest -Force
+
+          Write-Host "Release staging contents:"
+          Get-ChildItem -Path $stagingDir -Recurse -File | ForEach-Object {
+            Write-Host $_.FullName.Replace($stagingDir, "")
+          }
+
+          echo "STAGING_DIR=$stagingDir" >> $env:GITHUB_ENV
+          echo "RELEASE_ROOT=$releaseRoot" >> $env:GITHUB_ENV
+
+      - name: Get latest release version and generate release notes
+        shell: pwsh
+        run: |
+          $latestRelease = git tag --list --sort=-version:refname | Where-Object { $_ -match '^\d+\.\d+\.\d+$' } | Select-Object -First 1
+
+          if ($latestRelease) {
+            Write-Output "Latest release version: $latestRelease"
+            echo "latest_release=$latestRelease" >> $env:GITHUB_ENV
+
+            $version = [Version]$latestRelease
+            $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
+
+            $releaseNotes = "## Changes since $latestRelease`n"
+            $releaseNotes += (git log "$latestRelease..HEAD" --oneline) -join "`n"
+            $releaseNotes += "`n`n### Files changed`n`n"
+            $releaseNotes += (git diff "$latestRelease..HEAD" --compact-summary) -join "`n"
+          } else {
+            Write-Output "No previous release found. Creating initial release 0.0.1"
+            $newVersionString = "0.0.1"
+
+            $releaseNotes = "## Initial Release v0.0.1`n"
+            $releaseNotes += (git log --oneline -20) -join "`n"
+            $releaseNotes += "`n`n### Package contents`n`n"
+            $releaseNotes += "- net48/ - Managed DLL and runtime dependencies`n"
+            $releaseNotes += "- native-aot/win-x64/ - Native AOT shared library (x64)`n"
+            $releaseNotes += "- native-aot/win-x86/ - Native AOT shared library (x86)`n"
+            $releaseNotes += "- nupkg/ - NuGet package`n"
+          }
+
+          echo "new_release=$newVersionString" >> $env:GITHUB_ENV
+
+          $zipName = "KoreaCmsEvidenceOptimizer-$newVersionString.zip"
+          $zipPath = Join-Path $env:RELEASE_ROOT $zipName
+          $stagingParent = Split-Path $env:STAGING_DIR -Parent
+          $stagingFolderName = Split-Path $env:STAGING_DIR -Leaf
+          $renamedStaging = Join-Path $stagingParent "KoreaCmsEvidenceOptimizer-$newVersionString"
+          Rename-Item -Path $env:STAGING_DIR -NewName (Split-Path $renamedStaging -Leaf)
+
+          if (Test-Path $zipPath) {
+            Remove-Item -Path $zipPath -Force
+          }
+          Compress-Archive -Path $renamedStaging -DestinationPath $zipPath -Force
+
+          echo "zip_path=$zipPath" >> $env:GITHUB_ENV
+          echo "zip_name=$zipName" >> $env:GITHUB_ENV
+
+          $releaseNotes | Out-File -FilePath (Join-Path $env:RELEASE_ROOT "releaseNotes.txt") -Encoding utf8
+          $releaseNotesContent = Get-Content -Path (Join-Path $env:RELEASE_ROOT "releaseNotes.txt") -Raw
+          echo "release_notes<<EOF" >> $env:GITHUB_ENV
+          echo "$releaseNotesContent" >> $env:GITHUB_ENV
+          echo "EOF" >> $env:GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.zip_path }}
+          tag_name: ${{ env.new_release }}
+          name: Release ${{ env.new_release }}
+          body: ${{ env.release_notes }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
