@@ -34,6 +34,8 @@
     <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
     <PackageReference Include="PDFtoImage" Version="5.2.1" />
     <PackageReference Include="bblanchon.PDFium.Win32" Version="151.0.7920" />
+    <PackageReference Include="SkiaSharp" Version="4.148.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.148.0" />
   </ItemGroup>
 
 </Project>
