@@ -38,6 +38,38 @@ else
 var audioResult = Optimizer.OptimizeAudio(@"C:\in\call.wav", @"C:\out\call.mp3");
 ```
 
+## PowerBuilder (Managed Interop)
+
+Appeon PowerBuilder .NET DLL Importer는 static class, enum, private 생성자 결과 타입을 직접 import할 수 없습니다.
+`PowerBuilderOptimizer` non-static 어댑터가 ref/out 기반 API를 제공합니다.
+
+### Import
+
+1. GitHub Release의 `net48/win-x86` 또는 `net48/win-x64` 폴더에서 PB 앱 bitness에 맞는 `KoreaCmsEvidenceOptimizer.dll` 사용
+2. `pdfium.dll`, `libSkiaSharp.dll`, `libmp3lame.32.dll`(x86) 또는 `libmp3lame.64.dll`(x64)을 DLL과 같은 폴더에 배치
+3. .NET DLL Importer에서 **`PowerBuilderOptimizer` 클래스만** 선택하여 import
+4. `Optimizer`, `EvidenceErrorCode`, `OptimizeResult`는 Importer 실패 목록에 남을 수 있으나 선택하지 않으면 됩니다
+
+### 호출 예시 (PowerScript)
+
+```powerscript
+boolean lb_success
+string  ls_out_path, ls_message
+longlong ll_size, ll_code
+
+ll_code = lnv_optimizer.OptimizeImage(ls_in, ls_out, 307200, 0, &
+    lb_success, ls_out_path, ll_size, ls_message)
+
+if ll_code = lnv_optimizer.ErrorCodeSuccess then
+    // ls_out_path, ll_size 사용
+else
+    // ll_code, ls_message 로 오류 처리
+end if
+```
+
+`maxBytes`에 0 이하를 전달하면 기본값 307,200 bytes가 적용됩니다.
+에러 코드 상수는 `ErrorCodeSuccess`, `ErrorCodeFileNotFound` 등 read-only property로 노출됩니다.
+
 ## 에러 코드 (`EvidenceErrorCode`)
 
 | 값 | 이름 | 의미 |
