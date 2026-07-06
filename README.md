@@ -17,7 +17,7 @@ tests/KoreaCmsEvidenceOptimizer.Tests/  xUnit 단위 테스트 (에셋은 코드
 samples/ConsoleSample/     .NET 콘솔 샘플
 samples/CppSample/         Native AOT DLL을 호출하는 C++ 샘플
 .github/workflows/ci.yaml   CI (빌드/테스트, Dependabot auto-merge)
-.github/workflows/cd.yaml   CD (main 머지 시 ZIP GitHub Release)
+.github/workflows/cd.yaml   CD (CI 성공 후 ZIP GitHub Release)
 ```
 
 ## 사용법 (관리형 API)
@@ -73,3 +73,20 @@ dotnet publish src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -f
 ```powershell
 dotnet pack src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -c Release -o .\nupkg
 ```
+
+## GitHub Release (CD)
+
+main 브랜치에 push되면 CI(`ci.yaml`)가 통과한 뒤 CD(`cd.yaml`)가 실행되어 GitHub Release ZIP이 생성됩니다.
+
+Release ZIP 구조:
+
+```
+KoreaCmsEvidenceOptimizer-{version}/
+  net48/win-x86/   ILRepack merged DLL (32-bit .NET FX) + pdfium, libSkiaSharp, libmp3lame.32
+  net48/win-x64/   ILRepack merged DLL (64-bit .NET FX) + pdfium, libSkiaSharp, libmp3lame.64
+  native-aot/win-x64/
+  native-aot/win-x86/
+  nupkg/
+```
+
+net48 배포물은 [`KoreaCmsEvidenceOptimizer.snk`](KoreaCmsEvidenceOptimizer.snk)를 ILRepack `/keyfile`로 적용하여 strong-name 서명되며, managed 의존성이 단일 DLL로 병합됩니다. x86/x64는 각각 해당 .NET Framework 런타임용으로 별도 생성됩니다.

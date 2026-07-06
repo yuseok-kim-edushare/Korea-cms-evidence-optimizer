@@ -1,11 +1,10 @@
 name: Continuous Deployment
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI tests"]
+    types: [completed]
     branches: [main]
-    paths-ignore:
-      - "**/*.md"
-      - ".github/prompts/**"
   workflow_dispatch:
 
 permissions:
@@ -13,6 +12,7 @@ permissions:
 
 jobs:
   deploy:
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -20,6 +20,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Get USERPROFILE and set CACHE_PATH
         shell: pwsh
@@ -46,8 +47,78 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore KoreaCmsEvidenceOptimizer.slnx
 
-      - name: Build (Release)
-        run: dotnet build src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release --no-restore
+      - name: Publish net48 win-x86
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net48 -r win-x86 -c Release -o ./publish/net48/win-x86
+
+      - name: Publish net48 win-x64
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net48 -r win-x64 -c Release -o ./publish/net48/win-x64
+
+      - name: Install ILRepack
+        run: |
+          dotnet tool install -g dotnet-ilrepack
+          echo "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+
+      - name: Merge net48 DLLs with ILRepack (win-x86)
+        shell: pwsh
+        run: |
+          $buildPath = "${{ github.workspace }}/publish/net48/win-x86"
+          $snk = "${{ github.workspace }}/KoreaCmsEvidenceOptimizer.snk"
+          $targetPlatform = "v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319"
+          $nativeDlls = @("pdfium.dll", "libSkiaSharp.dll", "libmp3lame.32.dll", "libmp3lame.64.dll")
+
+          Get-ChildItem "$buildPath/runtimes" -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue |
+            ForEach-Object { Copy-Item $_.FullName $buildPath -Force }
+
+          $managed = Get-ChildItem $buildPath -Filter "*.dll" |
+            Where-Object { $nativeDlls -notcontains $_.Name } |
+            Sort-Object Name
+
+          $inputPaths = ($managed | ForEach-Object { $_.FullName })
+          & ilrepack /out:"$buildPath/KoreaCmsEvidenceOptimizer.dll" `
+            /lib:$buildPath `
+            /targetplatform:$targetPlatform `
+            /union /copyattrs /internalize `
+            /keyfile:$snk `
+            @inputPaths
+
+          foreach ($dll in $managed) {
+            if ($dll.Name -ne "KoreaCmsEvidenceOptimizer.dll") {
+              Remove-Item $dll.FullName -Force
+            }
+          }
+          Remove-Item "$buildPath/libmp3lame.64.dll" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$buildPath/runtimes" -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Merge net48 DLLs with ILRepack (win-x64)
+        shell: pwsh
+        run: |
+          $buildPath = "${{ github.workspace }}/publish/net48/win-x64"
+          $snk = "${{ github.workspace }}/KoreaCmsEvidenceOptimizer.snk"
+          $targetPlatform = "v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319"
+          $nativeDlls = @("pdfium.dll", "libSkiaSharp.dll", "libmp3lame.32.dll", "libmp3lame.64.dll")
+
+          Get-ChildItem "$buildPath/runtimes" -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue |
+            ForEach-Object { Copy-Item $_.FullName $buildPath -Force }
+
+          $managed = Get-ChildItem $buildPath -Filter "*.dll" |
+            Where-Object { $nativeDlls -notcontains $_.Name } |
+            Sort-Object Name
+
+          $inputPaths = ($managed | ForEach-Object { $_.FullName })
+          & ilrepack /out:"$buildPath/KoreaCmsEvidenceOptimizer.dll" `
+            /lib:$buildPath `
+            /targetplatform:$targetPlatform `
+            /union /copyattrs /internalize `
+            /keyfile:$snk `
+            @inputPaths
+
+          foreach ($dll in $managed) {
+            if ($dll.Name -ne "KoreaCmsEvidenceOptimizer.dll") {
+              Remove-Item $dll.FullName -Force
+            }
+          }
+          Remove-Item "$buildPath/libmp3lame.32.dll" -Force -ErrorAction SilentlyContinue
+          Remove-Item "$buildPath/runtimes" -Recurse -Force -ErrorAction SilentlyContinue
 
       - name: Publish Native AOT (win-x64)
         run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x64 -c Release
@@ -56,7 +127,7 @@ jobs:
         run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x86 -c Release
 
       - name: Pack NuGet package
-        run: dotnet pack src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release -o ./nupkg --no-build
+        run: dotnet pack src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release -o ./nupkg
 
       - name: Prepare release files
         shell: pwsh
@@ -74,15 +145,16 @@ jobs:
           $stagingDir = Join-Path $releaseRoot $stagingName
           New-Item -Path $stagingDir -ItemType Directory -Force | Out-Null
 
-          $net48Src = Join-Path $srcProject "bin\Release\net48"
-          $net48Dest = Join-Path $stagingDir "net48"
-          if (!(Test-Path $net48Src)) {
-            Write-Error "net48 build output not found at: $net48Src"
-            exit 1
+          foreach ($rid in @("win-x86", "win-x64")) {
+            $net48Src = Join-Path $projectRoot "publish\net48\$rid"
+            $net48Dest = Join-Path $stagingDir "net48\$rid"
+            if (!(Test-Path $net48Src)) {
+              Write-Error "net48 ILRepack output not found at: $net48Src"
+              exit 1
+            }
+            New-Item -Path $net48Dest -ItemType Directory -Force | Out-Null
+            Copy-Item -Path "$net48Src\*" -Destination $net48Dest -Force
           }
-          New-Item -Path $net48Dest -ItemType Directory -Force | Out-Null
-          Copy-Item -Path (Join-Path $net48Src "*.dll") -Destination $net48Dest -Force
-          Copy-Item -Path (Join-Path $net48Src "*.xml") -Destination $net48Dest -Force -ErrorAction SilentlyContinue
 
           $aotBase = Join-Path $srcProject "bin\Release\net10.0-windows"
           foreach ($rid in @("win-x64", "win-x86")) {
@@ -131,7 +203,8 @@ jobs:
             $releaseNotes = "## Initial Release v0.0.1`n"
             $releaseNotes += (git log --oneline -20) -join "`n"
             $releaseNotes += "`n`n### Package contents`n`n"
-            $releaseNotes += "- net48/ - Managed DLL and runtime dependencies`n"
+            $releaseNotes += "- net48/win-x86/ - ILRepack merged DLL (32-bit FX) + native deps`n"
+            $releaseNotes += "- net48/win-x64/ - ILRepack merged DLL (64-bit FX) + native deps`n"
             $releaseNotes += "- native-aot/win-x64/ - Native AOT shared library (x64)`n"
             $releaseNotes += "- native-aot/win-x86/ - Native AOT shared library (x86)`n"
             $releaseNotes += "- nupkg/ - NuGet package`n"
@@ -142,7 +215,6 @@ jobs:
           $zipName = "KoreaCmsEvidenceOptimizer-$newVersionString.zip"
           $zipPath = Join-Path $env:RELEASE_ROOT $zipName
           $stagingParent = Split-Path $env:STAGING_DIR -Parent
-          $stagingFolderName = Split-Path $env:STAGING_DIR -Leaf
           $renamedStaging = Join-Path $stagingParent "KoreaCmsEvidenceOptimizer-$newVersionString"
           Rename-Item -Path $env:STAGING_DIR -NewName (Split-Path $renamedStaging -Leaf)
 

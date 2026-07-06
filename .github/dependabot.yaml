@@ -27,3 +27,8 @@ updates:
     labels:
       - dependencies
       - github-actions
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "actions/*"
+
