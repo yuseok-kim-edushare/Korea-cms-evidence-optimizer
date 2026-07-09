@@ -20,7 +20,7 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref_name }}
 
       - name: Get USERPROFILE and set CACHE_PATH
         shell: pwsh
