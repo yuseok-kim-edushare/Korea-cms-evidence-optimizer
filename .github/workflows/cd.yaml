@@ -2,7 +2,7 @@ name: Continuous Deployment
 
 on:
   workflow_run:
-    workflows: ["CI tests"]
+    workflows: ["CI tests", "Auto-merge on Repository Dispatch"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
