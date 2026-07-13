@@ -8,6 +8,7 @@
     - 300KB 는 금융결제원 CMS 공지(https://www.cmsedi.or.kr/cms/board/workdata/cms/view/987) 기준
 - `net48` / `net10.0-windows`(Native AOT, C-Export) 멀티 타겟
     - Windows 7 이상 호환 보장 위한 net 48 / win 10 + 에서 성능 보장위한 Native AOT 구성입니다.
+    - Windows 전용인 이유는 금융결제원 CMS 공식 프로그램이 보안프로그램 등 windows 전용이라 타 운영체제 지원의 우선순위가 매우 낮기 때문입니다.
 
 ## 프로젝트 구조
 
