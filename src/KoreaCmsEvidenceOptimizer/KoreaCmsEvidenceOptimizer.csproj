@@ -33,7 +33,7 @@
     <PackageReference Include="NAudio.Lame" Version="2.1.0" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.9" />
     <PackageReference Include="PDFtoImage" Version="5.2.1" />
-    <PackageReference Include="bblanchon.PDFium.Win32" Version="152.0.7934" />
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="152.0.7947" />
     <PackageReference Include="SkiaSharp" Version="4.150.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.150.0" />
   </ItemGroup>
