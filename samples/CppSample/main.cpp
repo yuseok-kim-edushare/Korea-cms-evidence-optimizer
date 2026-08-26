@@ -19,8 +19,8 @@
 // int OptimizeEvidenceImage(char* inputPath, char* outputPath, long maxBytes, int pdfPageIndex)
 // int OptimizeEvidenceAudio(char* inputPath, char* outputPath, long maxBytes)
 // C# char*(UTF-16)는 Windows의 wchar_t*와 동일한 표현을 사용한다.
-typedef int(__cdecl* OptimizeEvidenceImageFn)(const wchar_t* inputPath, const wchar_t* outputPath, long long maxBytes, int pdfPageIndex);
-typedef int(__cdecl* OptimizeEvidenceAudioFn)(const wchar_t* inputPath, const wchar_t* outputPath, long long maxBytes);
+typedef int(__stdcall* OptimizeEvidenceImageFn)(const wchar_t* inputPath, const wchar_t* outputPath, long long maxBytes, int pdfPageIndex);
+typedef int(__stdcall* OptimizeEvidenceAudioFn)(const wchar_t* inputPath, const wchar_t* outputPath, long long maxBytes);
 
 static void PrintUsage()
 {

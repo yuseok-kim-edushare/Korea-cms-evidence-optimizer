@@ -96,7 +96,17 @@ dotnet publish src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -f
 ```
 
 `OptimizeEvidenceImage`, `OptimizeEvidenceAudio` 두 함수가 UTF-16(`char*`/`wchar_t*`) 포인터
-기반으로 네이티브 DLL에서 내보내집니다 (`samples/CppSample` 참고).
+기반으로 네이티브 DLL에서 내보내집니다 (`samples/CppSample` 참고). 두 함수는 PowerBuilder의
+Windows 기본 호출 규약인 `Stdcall`을 사용합니다. 이 차이는 x64에서는 드러나지 않지만,
+x86에서 호출자와 DLL의 규약이 다르면 스택 손상이나 프로세스 종료가 발생할 수 있습니다.
+
+```powerscript
+FUNCTION long OptimizeEvidenceImage(string inputPath, string outputPath, longlong maxBytes, long pdfPageIndex) LIBRARY "KoreaCmsEvidenceOptimizer.dll"
+FUNCTION long OptimizeEvidenceAudio(string inputPath, string outputPath, longlong maxBytes) LIBRARY "KoreaCmsEvidenceOptimizer.dll"
+```
+
+위 선언에는 `CDECL`을 추가하지 않습니다. DLL과 PowerBuilder 프로세스의 x86/x64 비트 수도
+반드시 일치해야 합니다.
 
 `net10.0-windows` 타겟은 `BuiltInComInteropSupport`를 활성화하여, M4A/WMA 디코딩에 사용되는
 `MediaFoundationReader`(COM 기반)도 Native AOT 환경에서 정상 동작합니다.

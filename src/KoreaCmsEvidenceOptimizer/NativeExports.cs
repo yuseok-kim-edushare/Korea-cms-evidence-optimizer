@@ -18,7 +18,7 @@ public static unsafe class NativeExports
     /// <param name="maxBytes">목표 최대 크기(바이트). 0 이하이면 기본값(300KB)을 사용한다.</param>
     /// <param name="pdfPageIndex">PDF인 경우 렌더링할 0-기반 페이지 인덱스.</param>
     /// <returns><see cref="EvidenceErrorCode"/> 정수 값 (0 = 성공).</returns>
-    [UnmanagedCallersOnly(EntryPoint = "OptimizeEvidenceImage", CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallersOnly(EntryPoint = "OptimizeEvidenceImage", CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvStdcall) })]
     public static int OptimizeEvidenceImage(char* inputPath, char* outputPath, long maxBytes, int pdfPageIndex)
     {
         try
@@ -46,7 +46,7 @@ public static unsafe class NativeExports
     /// <param name="outputPath">UTF-16(널 종료) 출력 파일 경로.</param>
     /// <param name="maxBytes">목표 최대 크기(바이트). 0 이하이면 기본값(300KB)을 사용한다.</param>
     /// <returns><see cref="EvidenceErrorCode"/> 정수 값 (0 = 성공).</returns>
-    [UnmanagedCallersOnly(EntryPoint = "OptimizeEvidenceAudio", CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    [UnmanagedCallersOnly(EntryPoint = "OptimizeEvidenceAudio", CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvStdcall) })]
     public static int OptimizeEvidenceAudio(char* inputPath, char* outputPath, long maxBytes)
     {
         try

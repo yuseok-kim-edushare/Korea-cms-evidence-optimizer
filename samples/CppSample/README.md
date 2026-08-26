@@ -2,7 +2,7 @@
 
 `KoreaCmsEvidenceOptimizer.dll`(net10.0-windows, Native AOT `NativeLib=Shared` 게시물)을
 `LoadLibraryW`/`GetProcAddress`로 동적 로드해 `OptimizeEvidenceImage`/`OptimizeEvidenceAudio`
-내보내기 함수를 호출하는 최소 예제입니다.
+내보내기 함수를 `__stdcall`로 호출하는 최소 예제입니다.
 
 ## 사전 준비: 네이티브 라이브러리 게시
 
