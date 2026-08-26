@@ -12,7 +12,7 @@
 
     <!-- NuGet package metadata -->
     <PackageId>KoreaCmsEvidenceOptimizer</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.1.2</Version>
     <Authors>Yuseok Kim (yuseok.kim@edushare.kr)</Authors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>

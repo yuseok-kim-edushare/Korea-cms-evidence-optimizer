@@ -192,6 +192,14 @@ jobs:
             $version = [Version]$latestRelease
             $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
 
+            # Allow commit messages like "Update Version To 0.1.2" to override the patch bump.
+            $latestCommitMessages = (git log "$latestRelease..HEAD" --pretty=%B 2>$null)
+            foreach ($line in $latestCommitMessages) {
+              if ($line -match "Update Version To (\d+\.\d+\.\d+)") {
+                $newVersionString = $Matches[1]
+              }
+            }
+
             $releaseNotes = "## Changes since $latestRelease`n"
             $releaseNotes += (git log "$latestRelease..HEAD" --oneline) -join "`n"
             $releaseNotes += "`n`n### Files changed`n`n"
