@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace KoreaCmsEvidenceOptimizer;
 
 /// <summary>
-/// Native AOT(C-Export) 진입점. net10.0-windows(NativeLib=Shared) 게시 시 네이티브 DLL에서
+/// Native AOT(C-Export) 진입점. net11.0-windows(NativeLib=Shared) 게시 시 네이티브 DLL에서
 /// UTF-16(char*) 포인터 기반으로 호출 가능한 함수들을 노출한다.
 /// 반환값은 <see cref="EvidenceErrorCode"/>의 정수 값과 동일하다 (0 = 성공).
 /// </summary>

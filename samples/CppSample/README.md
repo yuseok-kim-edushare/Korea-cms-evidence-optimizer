@@ -1,6 +1,6 @@
 ﻿# KoreaCmsEvidenceOptimizer C++ 샘플
 
-`KoreaCmsEvidenceOptimizer.dll`(net10.0-windows, Native AOT `NativeLib=Shared` 게시물)을
+`KoreaCmsEvidenceOptimizer.dll`(net11.0-windows, Native AOT `NativeLib=Shared` 게시물)을
 `LoadLibraryW`/`GetProcAddress`로 동적 로드해 `OptimizeEvidenceImage`/`OptimizeEvidenceAudio`
 내보내기 함수를 `__stdcall`로 호출하는 최소 예제입니다.
 
@@ -8,10 +8,10 @@
 
 ```powershell
 cd ..\..
-dotnet publish src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x64 -c Release
+dotnet publish src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -f net11.0-windows -r win-x64 -c Release
 ```
 
-게시 결과(`src\KoreaCmsEvidenceOptimizer\bin\Release\net10.0-windows\win-x64\publish\` 폴더의
+게시 결과(`src\KoreaCmsEvidenceOptimizer\bin\Release\net11.0-windows\win-x64\publish\` 폴더의
 `KoreaCmsEvidenceOptimizer.dll` 및 동반 네이티브 DLL 일체)를 이 샘플의 실행 파일과 같은 폴더로 복사해야 합니다.
 
 ## 빌드 (Visual Studio Developer Command Prompt + CMake)
@@ -30,7 +30,7 @@ cl /EHsc /std:c++17 main.cpp /Fe:EvidenceCppSample.exe
 ## 실행
 
 ```powershell
-copy ..\..\src\KoreaCmsEvidenceOptimizer\bin\Release\net10.0-windows\win-x64\publish\*.dll build\Release\
+copy ..\..\src\KoreaCmsEvidenceOptimizer\bin\Release\net11.0-windows\win-x64\publish\*.dll build\Release\
 build\Release\EvidenceCppSample.exe image C:\in\scan.jpg C:\out\scan.jpg
 build\Release\EvidenceCppSample.exe audio C:\in\call.wav C:\out\call.mp3 200000
 ```

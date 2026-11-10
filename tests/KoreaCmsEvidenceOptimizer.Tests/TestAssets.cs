@@ -9,7 +9,7 @@ namespace KoreaCmsEvidenceOptimizer.Tests;
 /// <summary>테스트에서 사용할 이미지/PDF/오디오 자산을 코드로 생성하는 헬퍼.</summary>
 internal static class TestAssets
 {
-    /// <summary>net48/net10 양쪽에서 동작하는 임시 디렉터리 생성 헬퍼.</summary>
+    /// <summary>net48/net11 양쪽에서 동작하는 임시 디렉터리 생성 헬퍼.</summary>
     public static string CreateTempDirectory(string prefix)
     {
         var path = Path.Combine(Path.GetTempPath(), prefix + Guid.NewGuid().ToString("N"));

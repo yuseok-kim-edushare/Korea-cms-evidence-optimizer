@@ -2,7 +2,7 @@
 
 /// <summary>
 /// KoreaCmsEvidenceOptimizer 처리 결과 에러 코드.
-/// Native export(NativeExports, net10.0-windows Native AOT 빌드)에서도 동일한 정수 값이 사용됩니다.
+/// Native export(NativeExports, net11.0-windows Native AOT 빌드)에서도 동일한 정수 값이 사용됩니다.
 /// </summary>
 public enum EvidenceErrorCode
 {

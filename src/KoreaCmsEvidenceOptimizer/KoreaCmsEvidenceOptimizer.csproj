@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net10.0-windows</TargetFrameworks>
+    <TargetFrameworks>net48;net11.0-windows</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -17,8 +17,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- Native AOT / C-Export settings: only for the .NET 10 Windows target -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='net10.0-windows'">
+  <!-- Native AOT / C-Export settings: only for the .NET 11 Windows target -->
+  <PropertyGroup Condition="'$(TargetFramework)'=='net11.0-windows'">
     <PublishAot>true</PublishAot>
     <NativeLib>Shared</NativeLib>
     <SelfContained>true</SelfContained>
@@ -30,12 +30,62 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" />
-    <PackageReference Include="NAudio.Lame" />
+    <PackageReference Include="NAudio.Lame">
+      <GeneratePathProperty>true</GeneratePathProperty>
+    </PackageReference>
     <PackageReference Include="System.Drawing.Common" />
     <PackageReference Include="PDFtoImage" />
+    <PackageReference Include="bblanchon.PDFium.Linux" />
+    <PackageReference Include="bblanchon.PDFium.macOS" />
     <PackageReference Include="bblanchon.PDFium.Win32" />
     <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" />
+  </ItemGroup>
+
+  <!--
+    NAudio.Lame loads LameDLLWrap with Assembly.Load(byte[]) from an embedded resource.
+    Native AOT only compiles assemblies that are publish inputs, so the matching wrapper
+    has to be extracted and marked PostprocessAssembly before ILC runs.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0-windows' and ('$(RuntimeIdentifier)' == 'win-x64' or '$(RuntimeIdentifier)' == 'win-x86')">
+    <Reference Include="LameDLLWrap">
+      <HintPath>$(IntermediateOutputPath)LameDLLWrap.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ExtractLameDllWrap"
+          BeforeTargets="ResolveAssemblyReferences"
+          Condition="'$(TargetFramework)' == 'net11.0-windows' and ('$(RuntimeIdentifier)' == 'win-x64' or '$(RuntimeIdentifier)' == 'win-x86')">
+    <PropertyGroup>
+      <_LameResourceName Condition="'$(RuntimeIdentifier)' == 'win-x64'">NAudio.Lame.x64.LameDLLWrap.dll</_LameResourceName>
+      <_LameResourceName Condition="'$(RuntimeIdentifier)' == 'win-x86'">NAudio.Lame.x86.LameDLLWrap.dll</_LameResourceName>
+      <_LameDllWrapPath>$(IntermediateOutputPath)LameDLLWrap.dll</_LameDllWrapPath>
+      <_NAudioLameDll>$(PkgNAudio_Lame)\lib\netstandard2.0\NAudio.Lame.dll</_NAudioLameDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_NAudioLameDll)')" Text="NAudio.Lame was not restored at '$(_NAudioLameDll)'." />
+    <Exec Command="powershell -NoProfile -File &quot;$(MSBuildThisFileDirectory)extract-lame-dllwrap.ps1&quot; -PackageDll &quot;$(_NAudioLameDll)&quot; -ResourceName &quot;$(_LameResourceName)&quot; -OutputPath &quot;$(_LameDllWrapPath)&quot;" />
+  </Target>
+
+  <Target Name="IncludeLameDllWrapInNativeCompile"
+          BeforeTargets="_ComputeIlcCompileInputs"
+          Condition="'$(TargetFramework)' == 'net11.0-windows' and ('$(RuntimeIdentifier)' == 'win-x64' or '$(RuntimeIdentifier)' == 'win-x86')">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(IntermediateOutputPath)LameDLLWrap.dll">
+        <RelativePath>LameDLLWrap.dll</RelativePath>
+        <PostprocessAssembly>true</PostprocessAssembly>
+        <AssetType>assembly</AssetType>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <!-- NAudio 2.4.0의 net48 지원 패키지. 상위 메이저는 net48을 지원하므로 이 TFM에서만 최신으로 고정한다. -->
+  <ItemGroup Condition="'$(TargetFramework)'=='net48'">
+    <PackageReference Include="Microsoft.Win32.Registry" />
+    <PackageReference Include="System.Resources.Extensions" />
+    <PackageReference Include="System.Security.AccessControl" />
+    <PackageReference Include="System.Security.Principal.Windows" />
   </ItemGroup>
 
 </Project>

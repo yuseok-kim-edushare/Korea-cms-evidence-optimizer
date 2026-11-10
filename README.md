@@ -6,7 +6,7 @@
 - 녹취: WAV/MP3/M4A/WMA 입력 → MP3 출력
 - 목표 크기(기본 300KB, 307,200 bytes) 초과 시 품질/해상도/비트레이트를 단계적으로 낮추며 재시도
     - 300KB 는 금융결제원 CMS 공지(https://www.cmsedi.or.kr/cms/board/workdata/cms/view/987) 기준
-- `net48` / `net10.0-windows`(Native AOT, C-Export) 멀티 타겟
+- `net48` / `net11.0-windows`(Native AOT, C-Export) 멀티 타겟
     - Windows 7 이상 호환 보장 위한 net 48 / win 10 + 에서 성능 보장위한 Native AOT 구성입니다.
     - Windows 전용인 이유는 금융결제원 CMS 공식 프로그램이 보안프로그램 등 windows 전용이라 타 운영체제 지원의 우선순위가 매우 낮기 때문입니다.
 
@@ -86,13 +86,13 @@ end if
 ```powershell
 dotnet build KoreaCmsEvidenceOptimizer.slnx -c Release
 dotnet test tests\KoreaCmsEvidenceOptimizer.Tests\KoreaCmsEvidenceOptimizer.Tests.csproj -f net48 -c Release
-dotnet test tests\KoreaCmsEvidenceOptimizer.Tests\KoreaCmsEvidenceOptimizer.Tests.csproj -f net10.0-windows -c Release
+dotnet test tests\KoreaCmsEvidenceOptimizer.Tests\KoreaCmsEvidenceOptimizer.Tests.csproj -f net11.0-windows -c Release
 ```
 
 ## Native AOT 게시 (C-Export)
 
 ```powershell
-dotnet publish src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x64 -c Release
+dotnet publish src\KoreaCmsEvidenceOptimizer\KoreaCmsEvidenceOptimizer.csproj -f net11.0-windows -r win-x64 -c Release
 ```
 
 `OptimizeEvidenceImage`, `OptimizeEvidenceAudio` 두 함수가 UTF-16(`char*`/`wchar_t*`) 포인터
@@ -108,7 +108,7 @@ FUNCTION long OptimizeEvidenceAudio(string inputPath, string outputPath, longlon
 위 선언에는 `CDECL`을 추가하지 않습니다. DLL과 PowerBuilder 프로세스의 x86/x64 비트 수도
 반드시 일치해야 합니다.
 
-`net10.0-windows` 타겟은 `BuiltInComInteropSupport`를 활성화하여, M4A/WMA 디코딩에 사용되는
+`net11.0-windows` 타겟은 `BuiltInComInteropSupport`를 활성화하여, M4A/WMA 디코딩에 사용되는
 `MediaFoundationReader`(COM 기반)도 Native AOT 환경에서 정상 동작합니다.
 
 ## NuGet 패키징

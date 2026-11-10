@@ -42,7 +42,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "10.0.x"
+          dotnet-version: "11.0.x"
 
       - name: Restore dependencies
         run: dotnet restore KoreaCmsEvidenceOptimizer.slnx
@@ -121,10 +121,10 @@ jobs:
           Remove-Item "$buildPath/runtimes" -Recurse -Force -ErrorAction SilentlyContinue
 
       - name: Publish Native AOT (win-x64)
-        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x64 -c Release
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net11.0-windows -r win-x64 -c Release
 
       - name: Publish Native AOT (win-x86)
-        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net10.0-windows -r win-x86 -c Release
+        run: dotnet publish src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -f net11.0-windows -r win-x86 -c Release
 
       - name: Pack NuGet package
         run: dotnet pack src/KoreaCmsEvidenceOptimizer/KoreaCmsEvidenceOptimizer.csproj -c Release -o ./nupkg
@@ -156,7 +156,7 @@ jobs:
             Copy-Item -Path "$net48Src\*" -Destination $net48Dest -Force
           }
 
-          $aotBase = Join-Path $srcProject "bin\Release\net10.0-windows"
+          $aotBase = Join-Path $srcProject "bin\Release\net11.0-windows"
           foreach ($rid in @("win-x64", "win-x86")) {
             $aotSrc = Join-Path $aotBase "$rid\publish"
             $aotDest = Join-Path $stagingDir "native-aot\$rid"
