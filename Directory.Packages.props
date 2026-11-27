@@ -11,9 +11,9 @@
     <PackageVersion Include="bblanchon.PDFium.Linux" Version="160.0.8179" />
     <PackageVersion Include="bblanchon.PDFium.macOS" Version="160.0.8179" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="160.0.8179" />
-    <PackageVersion Include="SkiaSharp" Version="4.157.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.157.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.157.0" />
+    <PackageVersion Include="SkiaSharp" Version="4.158.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.158.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.158.0" />
     <PackageVersion Include="coverlet.collector" Version="10.1.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
     <PackageVersion Include="Microsoft.TestPlatform.ObjectModel" Version="18.12.0" />
